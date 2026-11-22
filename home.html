@@ -302,7 +302,7 @@ main{min-height:calc(100svh - 98px);display:grid;place-items:center;padding:18px
 
  <button class="primary" id="continueBtn" type="button" disabled>CONTINUE TO BOOKING →</button>
  <div class="status" id="statusBox" aria-live="polite"></div>
- <p class="hint">Fare: ₹120 fixed when both pickup and destination are within Thisayanvilai; otherwise ₹24 per km, calculated using the exact driving distance. Pickup and destination must each be within 50 km of Thisayanvilai, and at least one must be within 5 km.</p>
+ <p class="hint">Fare: ₹24 per km (₹0.024 per metre), calculated using the exact driving distance. Pickup and destination must each be within 50 km of Thisayanvilai, and at least one must be within 5 km.</p>
 </section>
 </main>
 
@@ -467,23 +467,12 @@ const SERVICE_CENTER={name:"Thisayanvilai",lat:8.33611,lon:77.86444};
 const SERVICE_RADIUS_KM=50;
 const RATE_PER_KM=24;
 const RATE_PER_METRE=RATE_PER_KM/1000;
-const THISAYANVILAI_FIXED_FARE=120;
-function isThisayanvilaiLocation(location){
-  if(!location)return false;
-  const searchable=normalize((location.area||"")+" "+(location.displayName||"")+" "+(location.name||""));
-  return searchable.includes("thisayanvilai")||searchable.includes("thisaiyanvilai")||searchable.includes("thisayanvilai");
-}
-function isLocalThisayanvilaiTrip(from,to){
-  // The fixed local fare applies only when BOTH selected ends are identified as Thisayanvilai.
-  return isThisayanvilaiLocation(from)&&isThisayanvilaiLocation(to);
-}
 function getRateForDistance(distanceKm){
   return RATE_PER_KM;
 }
-function calculateFare(distanceMeters,from,to){
+function calculateFare(distanceMeters){
   if(!Number.isFinite(distanceMeters)||distanceMeters<0)return 0;
-  if(isLocalThisayanvilaiTrip(from,to))return THISAYANVILAI_FIXED_FARE;
-  // Outside-to/from Thisayanvilai trips use the exact road distance at ₹24/km.
+  // Charge proportionally for every metre: 1,000 m = ₹24; 500 m = ₹12.
   return Math.round(distanceMeters*RATE_PER_METRE*100)/100;
 }
 const NEAR_CENTRE_KM=5;
@@ -1230,19 +1219,15 @@ async function calculateBoth(){
     routeDurationSeconds=route.duration;
 
     const km=routeDistanceMeters/1000;
-    const localTrip=isLocalThisayanvilaiTrip(from,to);
     const appliedRate=RATE_PER_KM;
-    const fare=calculateFare(routeDistanceMeters,from,to);
-    const fareRateLabel=$("fareRateLabel");
-    if(fareRateLabel)fareRateLabel.textContent=localTrip?"₹120 FIXED":"₹24 / KM";
+    const fare=calculateFare(routeDistanceMeters);
 
     drawRoute(from,to,route.geometry);
 
     fareValue.textContent="₹"+fare.toFixed(2);
     distanceValue.textContent=km.toFixed(2)+" km ("+Math.round(routeDistanceMeters).toLocaleString("en-IN")+" m)";
     fareMeta.textContent=Math.round(routeDistanceMeters).toLocaleString("en-IN")+" metres · "+
-      formatDuration(routeDurationSeconds)+" estimated · "+
-      (localTrip?"Thisayanvilai local fixed fare":"₹"+appliedRate+"/km (₹0.024/metre)");
+      formatDuration(routeDurationSeconds)+" estimated · ₹"+appliedRate+"/km (₹0.024/metre)";
 
     continueBtn.disabled=false;
     showStatus("Service available! Estimated fare: ₹"+fare.toFixed(2)+".","success");
@@ -1336,9 +1321,7 @@ continueBtn.addEventListener("click",()=>{
     destination:{...destination},
     distanceMeters:routeDistanceMeters,
     distanceKm:Number((routeDistanceMeters/1000).toFixed(3)),
-    fare:Number(calculateFare(routeDistanceMeters,pickup,destination).toFixed(2)),
-    fareType:isLocalThisayanvilaiTrip(pickup,destination)?"THISAYANVILAI_FIXED":"DISTANCE_BASED",
-    fixedFare:isLocalThisayanvilaiTrip(pickup,destination)?THISAYANVILAI_FIXED_FARE:null,
+    fare:Number(calculateFare(routeDistanceMeters).toFixed(2)),
     ratePerKm:getRateForDistance(routeDistanceMeters/1000),
     estimatedDurationSeconds:routeDurationSeconds,
     estimatedDuration:formatDuration(routeDurationSeconds),
@@ -1727,3 +1710,4 @@ window.initTSYGooglePlaces=function(){
 <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDMweONfNZUuUqXx3DIYgpnNBjjvWfj5z4&libraries=places&callback=initTSYGooglePlaces&language=en&region=IN"></script>
 </body>
 </html>
+
