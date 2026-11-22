@@ -1002,7 +1002,7 @@ function renderSuggestions(which,query,remote){
   if(!list.children.length){
     const none=document.createElement("div");
     none.className="suggestion";
-    none.textContent="No places found within 50 km of Thisayanvilai.";
+    none.textContent="No matching saved place found. Try a street, house, village or landmark name.";
     list.appendChild(none);
   }
 
@@ -1047,22 +1047,22 @@ function startAutocomplete(which){
 let googlePlacesReady=false;
 pickupInput.addEventListener("input",()=>{
   pickup=null;resetFare();
-  if(!googlePlacesReady)startAutocomplete("pickup");
+  startAutocomplete("pickup");
 });
 destinationInput.addEventListener("input",()=>{
   destination=null;resetFare();
-  if(!googlePlacesReady)startAutocomplete("destination");
+  startAutocomplete("destination");
 });
 
 pickupInput.addEventListener("focus",()=>{
   lastFocusedLocation="pickup";
   const q=pickupInput.value.trim();
-  if(q.length>=2&&!pickup&&!googlePlacesReady)startAutocomplete("pickup");
+  if(q.length>=2&&!pickup)startAutocomplete("pickup");
 });
 destinationInput.addEventListener("focus",()=>{
   lastFocusedLocation="destination";
   const q=destinationInput.value.trim();
-  if(q.length>=2&&!destination&&!googlePlacesReady)startAutocomplete("destination");
+  if(q.length>=2&&!destination)startAutocomplete("destination");
 });
 
 document.addEventListener("click",e=>{
@@ -1077,7 +1077,6 @@ pickupInput.addEventListener("keydown",e=>{
     selectLocation("pickup",featuredLocation(place));
     return;
   }
-  if(googlePlacesReady)return;
   if(e.key==="Enter"){
     e.preventDefault();
     pickupSuggestions.classList.remove("show");
@@ -1091,7 +1090,6 @@ destinationInput.addEventListener("keydown",e=>{
     selectLocation("destination",featuredLocation(place));
     return;
   }
-  if(googlePlacesReady)return;
   if(e.key==="Enter"){
     e.preventDefault();
     destinationSuggestions.classList.remove("show");
@@ -1108,15 +1106,11 @@ async function resolveTypedLocation(which,query){
 
   try{
     const best=await pickBest(query,which==="pickup"?"Pickup":"Destination");
-    if(which==="pickup"){pickup=best;pickupInput.value=best.displayName;}
-    else{destination=best;destinationInput.value=best.displayName;}
-
+    selectLocation(which,best);
     if(pickup&&destination){
       calculateBoth();
     }else{
-      resetFare();
-      routeMap.setView([best.lat,best.lon],14);
-      showStatus("Location found. Enter the other location.","success");
+      showStatus("Location found and pinned on the map. Enter the other location.","success");
     }
   }catch(error){
     showStatus(error.message||"Unable to find this address.","error");
@@ -1704,7 +1698,7 @@ window.initTSYGooglePlaces=function(){
       destination:attachGoogleAutocomplete(destinationInput,"destination")
     };
     googlePlacesReady=true;
-    console.log("✓ Google Maps Places autocomplete enabled for TSY TAXI");
+    console.log("✓ Google Places enabled; TSY TAXI saved landmarks and local search remain enabled");
   }catch(error){
     console.error("Google Places initialization failed:",error);
     showStatus("Google Maps suggestions could not start. Please refresh and try again.","error");
