@@ -302,7 +302,7 @@ main{min-height:calc(100svh - 98px);display:grid;place-items:center;padding:18px
 
  <button class="primary" id="continueBtn" type="button" disabled>CONTINUE TO BOOKING →</button>
  <div class="status" id="statusBox" aria-live="polite"></div>
- <p class="hint">Fare: ₹24/km up to 25 km; ₹21/km above 25 km. Pickup and destination must each be within 50 km of Thisayanvilai, and at least one must be within 5 km.</p>
+ <p class="hint">Fare: ₹24 per km (₹0.024 per metre), calculated using the exact driving distance. Pickup and destination must each be within 50 km of Thisayanvilai, and at least one must be within 5 km.</p>
 </section>
 </main>
 
@@ -465,15 +465,15 @@ loadUserFromFirestore();
 ========================================= */
 const SERVICE_CENTER={name:"Thisayanvilai",lat:8.33611,lon:77.86444};
 const SERVICE_RADIUS_KM=50;
-const RATE_UP_TO_25_KM=24;
-const RATE_ABOVE_25_KM=21;
-const RATE_THRESHOLD_KM=25;
+const RATE_PER_KM=24;
+const RATE_PER_METRE=RATE_PER_KM/1000;
 function getRateForDistance(distanceKm){
-  return distanceKm<=RATE_THRESHOLD_KM?RATE_UP_TO_25_KM:RATE_ABOVE_25_KM;
+  return RATE_PER_KM;
 }
 function calculateFare(distanceMeters){
-  const km=distanceMeters/1000;
-  return distanceMeters*getRateForDistance(km)/1000;
+  if(!Number.isFinite(distanceMeters)||distanceMeters<0)return 0;
+  // Charge proportionally for every metre: 1,000 m = ₹24; 500 m = ₹12.
+  return Math.round(distanceMeters*RATE_PER_METRE*100)/100;
 }
 const NEAR_CENTRE_KM=5;
 
@@ -1219,15 +1219,15 @@ async function calculateBoth(){
     routeDurationSeconds=route.duration;
 
     const km=routeDistanceMeters/1000;
-    const appliedRate=getRateForDistance(km);
+    const appliedRate=RATE_PER_KM;
     const fare=calculateFare(routeDistanceMeters);
 
     drawRoute(from,to,route.geometry);
 
     fareValue.textContent="₹"+fare.toFixed(2);
-    distanceValue.textContent=km.toFixed(2)+" km";
-    fareMeta.textContent=Math.round(routeDistanceMeters)+" metres · "+
-      formatDuration(routeDurationSeconds)+" estimated · ₹"+appliedRate+"/km";
+    distanceValue.textContent=km.toFixed(2)+" km ("+Math.round(routeDistanceMeters).toLocaleString("en-IN")+" m)";
+    fareMeta.textContent=Math.round(routeDistanceMeters).toLocaleString("en-IN")+" metres · "+
+      formatDuration(routeDurationSeconds)+" estimated · ₹"+appliedRate+"/km (₹0.024/metre)";
 
     continueBtn.disabled=false;
     showStatus("Service available! Estimated fare: ₹"+fare.toFixed(2)+".","success");
