@@ -606,6 +606,7 @@ class OutOfAreaError extends Error{}
 ========================================= */
 let routeMap=L.map("routeMap",{zoomControl:true})
   .setView([SERVICE_CENTER.lat,SERVICE_CENTER.lon],10);
+let googleMap=null, googleRoute=null, googlePickupMarker=null, googleDestinationMarker=null, googleServiceCircle=null;
 
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
   maxZoom:19,attribution:"&copy; OpenStreetMap contributors"
@@ -622,7 +623,13 @@ L.marker([SERVICE_CENTER.lat,SERVICE_CENTER.lon]).addTo(routeMap)
 
 
 function setMapView(lat,lon,zoom=14){
-  if(routeMap)routeMap.setView([lat,lon],zoom);
+  if(googleMap){googleMap.setCenter({lat,lng:lon});googleMap.setZoom(zoom);}
+  else if(routeMap)routeMap.setView([lat,lon],zoom);
+}
+function clearGoogleRoute(){
+  if(googleRoute){googleRoute.setMap(null);googleRoute=null;}
+  if(googlePickupMarker){googlePickupMarker.setMap(null);googlePickupMarker=null;}
+  if(googleDestinationMarker){googleDestinationMarker.setMap(null);googleDestinationMarker=null;}
 }
 
 /* =========================================
@@ -686,6 +693,7 @@ function outsideMessage(label,km){
 }
 
 function clearRouteMap(){
+  if(googleMap){clearGoogleRoute();}
   if(routeMap){
     if(routeLayer){routeMap.removeLayer(routeLayer);routeLayer=null;}
     if(pickupMarker){routeMap.removeLayer(pickupMarker);pickupMarker=null;}
@@ -790,12 +798,7 @@ function queryVariants(query){
     const first=q.split(",")[0].trim();
     if(first.length>=2)list.push(first);
   }
-  // Add local context so short shop, street, landmark and address searches
-  // resolve against the Thisayanvilai service area rather than elsewhere in India.
-  if(!/thisayanvilai|thisaiyanvilai|tirunelveli|tamil\s*nadu/i.test(q)){
-    list.push(q+", Thisayanvilai, Tamil Nadu");
-  }
-  return list.filter((v,i,a)=>v&&a.indexOf(v)===i);
+  return list.filter((v,i,a)=>a.indexOf(v)===i);
 }
 
 /* Only returns places INSIDE the 50 km circle. */
@@ -996,12 +999,24 @@ function startAutocomplete(which){
 /* =========================================
    INPUT EVENTS
 ========================================= */
-// Use OpenStreetMap-powered search directly. This avoids Google billing/key popups.
-pickupInput.addEventListener("input",()=>{pickup=null;resetFare();startAutocomplete("pickup");});
-destinationInput.addEventListener("input",()=>{destination=null;resetFare();startAutocomplete("destination");});
+let googlePlacesReady=false;
+let googlePlacesLibrary=null;
+const googleSessionTokens={pickup:null,destination:null};
+const googleRequestIds={pickup:0,destination:0};
 
-pickupInput.addEventListener("focus",()=>{if(pickupInput.value.trim().length>=2&&!pickup)startAutocomplete("pickup");});
-destinationInput.addEventListener("focus",()=>{if(destinationInput.value.trim().length>=2&&!destination)startAutocomplete("destination");});
+function handleLocationInput(which){
+  const input=which==="pickup"?pickupInput:destinationInput;
+  const selected=which==="pickup"?pickup:destination;
+  if(which==="pickup")pickup=null;else destination=null;
+  resetFare();
+  if(googlePlacesReady)startGoogleAutocomplete(which);
+  else if(input.value.trim().length>=2)startAutocomplete(which);
+  else (which==="pickup"?pickupSuggestions:destinationSuggestions).classList.remove("show");
+}
+pickupInput.addEventListener("input",()=>handleLocationInput("pickup"));
+destinationInput.addEventListener("input",()=>handleLocationInput("destination"));
+pickupInput.addEventListener("focus",()=>{if(pickupInput.value.trim().length>=2&&!pickup){if(googlePlacesReady)startGoogleAutocomplete("pickup");else startAutocomplete("pickup");}});
+destinationInput.addEventListener("focus",()=>{if(destinationInput.value.trim().length>=2&&!destination){if(googlePlacesReady)startGoogleAutocomplete("destination");else startAutocomplete("destination");}});
 
 document.addEventListener("click",e=>{
   if(!e.target.closest("#pickupField"))pickupSuggestions.classList.remove("show");
@@ -1009,6 +1024,7 @@ document.addEventListener("click",e=>{
 });
 
 pickupInput.addEventListener("keydown",e=>{
+  if(googlePlacesReady)return;
   if(e.key==="Enter"){
     e.preventDefault();
     pickupSuggestions.classList.remove("show");
@@ -1016,6 +1032,7 @@ pickupInput.addEventListener("keydown",e=>{
   }
 });
 destinationInput.addEventListener("keydown",e=>{
+  if(googlePlacesReady)return;
   if(e.key==="Enter"){
     e.preventDefault();
     destinationSuggestions.classList.remove("show");
@@ -1081,7 +1098,12 @@ function dotIcon(color){
 function drawRoute(from,to,geometry){
   clearRouteMap();
   const points=geometry.coordinates.map(p=>({lat:p[1],lng:p[0]}));
-  if(routeMap){
+  if(googleMap){
+    googleRoute=new google.maps.Polyline({path:points,geodesic:true,strokeColor:"#e5a900",strokeOpacity:.95,strokeWeight:5,map:googleMap});
+    googlePickupMarker=new google.maps.Marker({position:{lat:from.lat,lng:from.lon},map:googleMap,title:"Pickup: "+from.area,label:{text:"P",color:"#fff"},icon:{path:google.maps.SymbolPath.CIRCLE,scale:9,fillColor:"#16834a",fillOpacity:1,strokeColor:"#fff",strokeWeight:3}});
+    googleDestinationMarker=new google.maps.Marker({position:{lat:to.lat,lng:to.lon},map:googleMap,title:"Destination: "+to.area,label:{text:"D",color:"#fff"},icon:{path:google.maps.SymbolPath.CIRCLE,scale:9,fillColor:"#e34c38",fillOpacity:1,strokeColor:"#fff",strokeWeight:3}});
+    const bounds=new google.maps.LatLngBounds();points.forEach(point=>bounds.extend(point));googleMap.fitBounds(bounds,25);
+  }else if(routeMap){
     const leafletPoints=geometry.coordinates.map(p=>[p[1],p[0]]);
     routeLayer=L.polyline(leafletPoints,{color:"#e5a900",weight:5,opacity:.95}).addTo(routeMap);
     pickupMarker=L.marker([from.lat,from.lon],{icon:dotIcon("#16834a")}).addTo(routeMap).bindPopup("Pickup: "+escapeHtml(from.area));
@@ -1089,7 +1111,7 @@ function drawRoute(from,to,geometry){
     routeMap.fitBounds(routeLayer.getBounds(),{padding:[25,25],maxZoom:14});
   }
   mapStatus.textContent="Driving route displayed";
-  setTimeout(()=>{if(routeMap)routeMap.invalidateSize();},150);
+  setTimeout(()=>{if(routeMap)routeMap.invalidateSize();if(googleMap)google.maps.event.trigger(googleMap,"resize");},150);
 }
 
 async function getDrivingRoute(from,to){
@@ -1258,7 +1280,7 @@ continueBtn.addEventListener("click",()=>{
   window.location.href="booking.html";
 });
 
-window.addEventListener("load",()=>setTimeout(()=>{if(routeMap)routeMap.invalidateSize();},250));
+window.addEventListener("load",()=>setTimeout(()=>{if(routeMap)routeMap.invalidateSize();if(googleMap)google.maps.event.trigger(googleMap,"resize");},250));
 
 // Sidebar functionality
 const profileBtn=document.getElementById("profileBtn");
@@ -1575,9 +1597,189 @@ function safeErrorText(value){
   }[char]));
 }
 
-/* Google Maps script intentionally removed. Search uses Photon + Nominatim
-   OpenStreetMap data, then filters every result by the exact 50 km radius. */
-console.log("TSY TAXI location search ready: OpenStreetMap + 50 km Thisayanvilai filter");
+/* =========================================
+   GOOGLE MAPS + PLACES API (NEW)
+   Google map is the primary map. Places Data API supplies suggestions.
+   Predictions are geographically restricted to the 50 km bounding box;
+   every selected place is checked against the exact 50 km circle.
+========================================= */
+let googleMapsAuthFailed=false;
+let googleServiceMarker=null;
+
+function googleDistanceFromCentre(lat,lng){
+  return haversineKm(SERVICE_CENTER.lat,SERVICE_CENTER.lon,lat,lng);
+}
+
+function ensureGoogleSession(which){
+  if(!googleSessionTokens[which]&&googlePlacesLibrary?.AutocompleteSessionToken){
+    googleSessionTokens[which]=new googlePlacesLibrary.AutocompleteSessionToken();
+  }
+  return googleSessionTokens[which];
+}
+
+async function selectGooglePrediction(which,placePrediction){
+  const list=which==="pickup"?pickupSuggestions:destinationSuggestions;
+  const input=which==="pickup"?pickupInput:destinationInput;
+  try{
+    list.classList.remove("show");
+    showStatus("Loading selected Google Maps location...","info");
+    const place=placePrediction.toPlace();
+    await place.fetchFields({fields:["displayName","formattedAddress","location","types"]});
+    if(!place.location)throw new Error("Google did not return map coordinates for this place. Please choose another suggestion.");
+    const lat=typeof place.location.lat==="function"?place.location.lat():place.location.lat;
+    const lon=typeof place.location.lng==="function"?place.location.lng():place.location.lng;
+    const km=googleDistanceFromCentre(lat,lon);
+    if(!Number.isFinite(km)||km>SERVICE_RADIUS_KM){
+      showStatus((place.formattedAddress||place.displayName||"This place")+" is "+(Number.isFinite(km)?km.toFixed(1):"more than 50")+" km from Thisayanvilai. Choose a place within 50 km.","error");
+      input.focus();
+      return;
+    }
+    const area=place.displayName||place.formattedAddress||placePrediction.text.toString();
+    const location={
+      area,
+      displayName:place.formattedAddress||area,
+      lat,lon,
+      placeId:place.id||"",
+      types:Array.isArray(place.types)?place.types:[],
+      method:"google-places-new"
+    };
+    googleSessionTokens[which]=null;
+    selectLocation(which,location);
+    if(googleMap){
+      googleMap.panTo({lat,lng:lon});
+      googleMap.setZoom(15);
+    }
+  }catch(error){
+    console.error("Google Places selection failed:",error);
+    showStatus(error?.message||"Google Places could not load this location. Please try again.","error");
+  }
+}
+
+async function startGoogleAutocomplete(which){
+  if(!googlePlacesReady||!googlePlacesLibrary)return;
+  const input=which==="pickup"?pickupInput:destinationInput;
+  const list=which==="pickup"?pickupSuggestions:destinationSuggestions;
+  const query=input.value.trim();
+  const requestId=++googleRequestIds[which];
+  if(query.length<2){list.classList.remove("show");list.replaceChildren();return;}
+  list.replaceChildren();
+  const loading=document.createElement("div");
+  loading.className="suggestion";
+  loading.textContent="Searching Google Maps places...";
+  list.appendChild(loading);
+  list.classList.add("show");
+  try{
+    const token=ensureGoogleSession(which);
+    const request={
+      input:query,
+      sessionToken:token,
+      locationRestriction:{west:BOX.minLon,south:BOX.minLat,east:BOX.maxLon,north:BOX.maxLat},
+      origin:{lat:SERVICE_CENTER.lat,lng:SERVICE_CENTER.lon},
+      language:"en",
+      region:"in"
+    };
+    const response=await googlePlacesLibrary.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+    if(requestId!==googleRequestIds[which]||input.value.trim()!==query)return;
+    list.replaceChildren();
+    const suggestions=response?.suggestions||[];
+    let added=0;
+    suggestions.forEach(suggestion=>{
+      const prediction=suggestion.placePrediction;
+      if(!prediction)return;
+      // The API returns straight-line distance when origin is supplied.
+      const distance=typeof prediction.distanceMeters==="number"?prediction.distanceMeters/1000:null;
+      if(distance!==null&&distance>SERVICE_RADIUS_KM)return;
+      const fullText=prediction.text?.toString?.()||"Google Maps place";
+      const mainText=prediction.mainText?.text||fullText;
+      const secondary=prediction.secondaryText?.text||"Google Maps result";
+      const item=document.createElement("div");
+      item.className="suggestion";
+      item.setAttribute("role","option");
+      const title=document.createElement("div");
+      title.className="place-name";
+      title.textContent=mainText;
+      const type=document.createElement("span");
+      type.className="place-type";
+      type.textContent="GOOGLE MAPS";
+      title.appendChild(type);
+      const detail=document.createElement("small");
+      detail.textContent=secondary+(distance!==null?" · "+distance.toFixed(1)+" km from Thisayanvilai":" · within the local search area");
+      item.append(title,detail);
+      item.addEventListener("click",()=>selectGooglePrediction(which,prediction));
+      list.appendChild(item);
+      added++;
+    });
+    if(!added){
+      const empty=document.createElement("div");
+      empty.className="suggestion";
+      empty.textContent="No Google places found within 50 km. Try a nearby village, street or landmark.";
+      list.appendChild(empty);
+    }
+  }catch(error){
+    if(requestId!==googleRequestIds[which])return;
+    console.error("Google Places autocomplete request failed:",error);
+    list.replaceChildren();
+    const message=document.createElement("div");
+    message.className="suggestion";
+    message.textContent="Google Places search is unavailable. Check billing and enable Places API (New) for this key.";
+    list.appendChild(message);
+    list.classList.add("show");
+  }
+}
+
+window.initTSYGooglePlaces=async function(){
+  try{
+    if(googleMapsAuthFailed)throw new Error("Google Maps authentication failed. Check Google Cloud billing and API key restrictions.");
+    if(!window.google||!google.maps)throw new Error("Google Maps JavaScript API did not load.");
+    const [{Map},{AutocompleteSuggestion,AutocompleteSessionToken}]=await Promise.all([
+      google.maps.importLibrary("maps"),
+      google.maps.importLibrary("places")
+    ]);
+    googlePlacesLibrary={AutocompleteSuggestion,AutocompleteSessionToken};
+    const mapElement=document.getElementById("routeMap");
+    if(!mapElement)throw new Error("Map container #routeMap was not found.");
+    googleMap=new Map(mapElement,{
+      center:{lat:SERVICE_CENTER.lat,lng:SERVICE_CENTER.lon},
+      zoom:10,
+      mapTypeControl:true,
+      streetViewControl:false,
+      fullscreenControl:true,
+      gestureHandling:"greedy",
+      mapTypeId:"roadmap"
+    });
+    googleServiceCircle=new google.maps.Circle({
+      map:googleMap,
+      center:{lat:SERVICE_CENTER.lat,lng:SERVICE_CENTER.lon},
+      radius:SERVICE_RADIUS_KM*1000,
+      strokeColor:"#d6a000",strokeOpacity:.95,strokeWeight:2,
+      fillColor:"#ffc400",fillOpacity:.07
+    });
+    googleServiceMarker=new google.maps.Marker({
+      map:googleMap,
+      position:{lat:SERVICE_CENTER.lat,lng:SERVICE_CENTER.lon},
+      title:"TSY TAXI · Thisayanvilai service centre",
+      label:{text:"TSY",color:"#111",fontWeight:"bold"}
+    });
+    if(routeMap){routeMap.remove();routeMap=null;}
+    googlePlacesReady=true;
+    mapStatus.textContent="Google Maps ready · 50 km service area";
+    console.log("TSY TAXI: Google Maps and Places API (New) ready.");
+    if(pickupInput.value.trim().length>=2)startGoogleAutocomplete("pickup");
+    if(destinationInput.value.trim().length>=2)startGoogleAutocomplete("destination");
+  }catch(error){
+    console.error("TSY TAXI Google Maps initialization failed:",error);
+    showStatus(error?.message||"Google Maps could not initialize. Check billing, enabled APIs and key restrictions.","error");
+  }
+};
+
+window.gm_authFailure=function(){
+  googleMapsAuthFailed=true;
+  googlePlacesReady=false;
+  console.error("Google Maps authentication failed. Check billing, API enablement and HTTP referrer restrictions.");
+  showStatus("Google rejected this Maps API key. Enable billing for project tsytaxi-fcbd3, enable Maps JavaScript API and Places API (New), and allow https://tsytaxi.vercel.app/* in the key's website restrictions.","error");
+};
+
 </script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDMweONfNZUuUqXx3DIYgpnNBjjvWfj5z4&callback=initTSYGooglePlaces&language=en&region=IN&v=weekly"></script>
 </body>
 </html>
