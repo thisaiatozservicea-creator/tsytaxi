@@ -233,6 +233,11 @@ main{min-height:calc(100svh - 98px);display:grid;place-items:center;padding:18px
    <span class="menu-text">Languages</span>
    <span class="menu-arrow">›</span>
   </a>
+  <a href="#" class="menu-item" id="menuDownloadApp">
+   <span class="menu-icon">📲</span>
+   <span class="menu-text">Download App</span>
+   <span class="menu-arrow">›</span>
+  </a>
   <a href="#" class="menu-item" id="menuHelp">
    <span class="menu-icon">❓</span>
    <span class="menu-text">Help & Support</span>
@@ -365,6 +370,35 @@ main{min-height:calc(100svh - 98px);display:grid;place-items:center;padding:18px
  </div>
 </div>
 
+
+<!-- Download App -->
+<div class="profile-modal" id="downloadAppModal" role="dialog" aria-modal="true" aria-labelledby="downloadAppTitle">
+ <div class="profile-dialog">
+  <div class="profile-modal-header">
+   <h2 id="downloadAppTitle">Download TSY TAXI App</h2>
+   <button class="profile-modal-close" id="downloadAppClose" type="button" aria-label="Close download instructions">✕</button>
+  </div>
+  <div class="profile-modal-body" style="padding:24px 20px">
+   <div style="text-align:center;margin-bottom:18px">
+    <div style="width:76px;height:76px;border-radius:22px;background:#fff4c4;display:grid;place-items:center;font-size:39px;margin:0 auto 12px">📲</div>
+    <h3 style="margin:0 0 7px;font-size:18px">Your ride, one tap away!</h3>
+    <p style="margin:0;color:#777;font-size:12px;line-height:1.6">Install the official TSY TAXI Android app for a convenient booking experience.</p>
+   </div>
+   <a href="https://drive.google.com/file/d/1S19f2-2CLKsWjpjkJh3ZaKlDBbbbuGZx/view?usp=sharing" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:49px;background:#ffc400;color:#111;text-decoration:none;border-radius:12px;font-size:13px;font-weight:950;box-shadow:0 4px 0 #d19e00;margin-bottom:19px">⬇️ DOWNLOAD ANDROID APP</a>
+   <div style="border:1px solid #eee;border-radius:14px;padding:15px">
+    <h3 style="font-size:13px;margin:0 0 12px">How to install the app</h3>
+    <ol style="padding-left:20px;margin:0;color:#555;font-size:12px;line-height:1.75">
+     <li>Tap <strong>Download Android App</strong> above. Google Drive will open.</li>
+     <li>Tap the <strong>Download</strong> icon on the Google Drive page to download the APK file.</li>
+     <li>When the download is complete, open the APK from your phone's Downloads folder or notification.</li>
+     <li>If Android asks for permission, choose <strong>Allow from this source</strong> for your browser or Files app, then return to the installer.</li>
+     <li>Tap <strong>Install</strong>. After installation, tap <strong>Open</strong> to start using TSY TAXI.</li>
+    </ol>
+   </div>
+   <p style="font-size:10px;color:#888;line-height:1.5;text-align:center;margin:13px 0 0">Only install the APK downloaded from the TSY TAXI Google Drive link above. The permission is needed only to install an app outside the Play Store.</p>
+  </div>
+ </div>
+</div>
 
 <!-- Help & Support -->
 <div class="profile-modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
@@ -1261,6 +1295,18 @@ const logoutBtn=document.getElementById("logoutBtn");
 const helpModal=document.getElementById("helpModal");
 const helpModalClose=document.getElementById("helpModalClose");
 const menuHelp=document.getElementById("menuHelp");
+const downloadAppModal=document.getElementById("downloadAppModal");
+const downloadAppClose=document.getElementById("downloadAppClose");
+const menuDownloadApp=document.getElementById("menuDownloadApp");
+
+function openDownloadAppModal(){
+  closeSidebar();
+  downloadAppModal.classList.add("open");
+}
+function closeDownloadAppModal(){downloadAppModal.classList.remove("open");}
+menuDownloadApp.addEventListener("click",e=>{e.preventDefault();openDownloadAppModal();});
+downloadAppClose.addEventListener("click",closeDownloadAppModal);
+downloadAppModal.addEventListener("click",e=>{if(e.target===downloadAppModal)closeDownloadAppModal();});
 
 function openHelpModal(){
   closeSidebar();
