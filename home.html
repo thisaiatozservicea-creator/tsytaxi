@@ -233,11 +233,6 @@ main{min-height:calc(100svh - 98px);display:grid;place-items:center;padding:18px
    <span class="menu-text">Languages</span>
    <span class="menu-arrow">›</span>
   </a>
-  <a href="#" class="menu-item" id="menuDownloadApp">
-   <span class="menu-icon">📲</span>
-   <span class="menu-text">Download App</span>
-   <span class="menu-arrow">›</span>
-  </a>
   <a href="#" class="menu-item" id="menuHelp">
    <span class="menu-icon">❓</span>
    <span class="menu-text">Help & Support</span>
@@ -371,35 +366,6 @@ main{min-height:calc(100svh - 98px);display:grid;place-items:center;padding:18px
 </div>
 
 
-<!-- Download App -->
-<div class="profile-modal" id="downloadAppModal" role="dialog" aria-modal="true" aria-labelledby="downloadAppTitle">
- <div class="profile-dialog">
-  <div class="profile-modal-header">
-   <h2 id="downloadAppTitle">Download TSY TAXI App</h2>
-   <button class="profile-modal-close" id="downloadAppClose" type="button" aria-label="Close download instructions">✕</button>
-  </div>
-  <div class="profile-modal-body" style="padding:24px 20px">
-   <div style="text-align:center;margin-bottom:18px">
-    <div style="width:76px;height:76px;border-radius:22px;background:#fff4c4;display:grid;place-items:center;font-size:39px;margin:0 auto 12px">📲</div>
-    <h3 style="margin:0 0 7px;font-size:18px">Your ride, one tap away!</h3>
-    <p style="margin:0;color:#777;font-size:12px;line-height:1.6">Install the official TSY TAXI Android app for a convenient booking experience.</p>
-   </div>
-   <a href="https://drive.google.com/file/d/1S19f2-2CLKsWjpjkJh3ZaKlDBbbbuGZx/view?usp=sharing" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:49px;background:#ffc400;color:#111;text-decoration:none;border-radius:12px;font-size:13px;font-weight:950;box-shadow:0 4px 0 #d19e00;margin-bottom:19px">⬇️ DOWNLOAD ANDROID APP</a>
-   <div style="border:1px solid #eee;border-radius:14px;padding:15px">
-    <h3 style="font-size:13px;margin:0 0 12px">How to install the app</h3>
-    <ol style="padding-left:20px;margin:0;color:#555;font-size:12px;line-height:1.75">
-     <li>Tap <strong>Download Android App</strong> above. Google Drive will open.</li>
-     <li>Tap the <strong>Download</strong> icon on the Google Drive page to download the APK file.</li>
-     <li>When the download is complete, open the APK from your phone's Downloads folder or notification.</li>
-     <li>If Android asks for permission, choose <strong>Allow from this source</strong> for your browser or Files app, then return to the installer.</li>
-     <li>Tap <strong>Install</strong>. After installation, tap <strong>Open</strong> to start using TSY TAXI.</li>
-    </ol>
-   </div>
-   <p style="font-size:10px;color:#888;line-height:1.5;text-align:center;margin:13px 0 0">Only install the APK downloaded from the TSY TAXI Google Drive link above. The permission is needed only to install an app outside the Play Store.</p>
-  </div>
- </div>
-</div>
-
 <!-- Help & Support -->
 <div class="profile-modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
  <div class="profile-dialog">
@@ -510,6 +476,31 @@ function calculateFare(distanceMeters){
   return distanceMeters*getRateForDistance(km)/1000;
 }
 const NEAR_CENTRE_KM=5;
+
+/* User-supplied verified landmark list. These exact names and coordinates
+   are shown in the pickup/destination suggestions and on the map. */
+const FEATURED_LANDMARKS=[
+  {name:"Velavan Furniture",area:"Thisayanvilai",lat:8.3359,lon:77.8715},
+  {name:"Sudalai Aandavar Kovil (Sri Aaladi Temple)",area:"Thisayanvilai",lat:8.3323,lon:77.8638},
+  {name:"Ramakrishna Higher Secondary School",area:"Thisayanvilai",lat:8.3357,lon:77.8712},
+  {name:"Holy Redeemers Higher Secondary School",area:"Thisayanvilai",lat:8.3361,lon:77.8683},
+  {name:"Thisayanvilai Bus Stand",area:"Thisayanvilai",lat:8.3352,lon:77.8651},
+  {name:"MGR Bus Stand / New Bus Stand Area",area:"Thisayanvilai",lat:8.3354,lon:77.8649},
+  {name:"Anand Hospital / Medicals",area:"Thisayanvilai",lat:8.3339,lon:77.8640},
+  {name:"Mathan Hospital / Chidambaram Hospital",area:"Thisayanvilai",lat:8.3320,lon:77.8614},
+  {name:"Pilayar Kovil Irakam",area:"Thisayanvilai",lat:8.3342,lon:77.8648},
+  {name:"Tamilnad Mercantile Bank (TMB)",area:"Thisayanvilai",lat:8.3331,lon:77.8659},
+  {name:"Indian Overseas Bank (IOB)",area:"Thisayanvilai",lat:8.3344,lon:77.8672},
+  {name:"Canara Bank",area:"Thisayanvilai",lat:8.3336,lon:77.8637},
+  {name:"BMC Plaza",area:"Thisayanvilai",lat:8.3343,lon:77.8639},
+  {name:"Santhi Hospital",area:"Thisayanvilai",lat:8.3245,lon:77.8611},
+  {name:"VSR International School",area:"Thisayanvilai",lat:8.3113,lon:77.8540},
+  {name:"Udangudi Church (St. Christian Church)",area:"Idayankudi",lat:8.4342,lon:78.0125},
+  {name:"Uvari Sri Suyambulinga Swami Temple",area:"Uvari",lat:8.2831,lon:77.8967},
+  {name:"Uvari Anthoniyar Kovil (St. Antony's Shrine)",area:"Uvari",lat:8.2785,lon:77.8942},
+  {name:"Navvalady Road Bypass",area:"Thisayanvilai",lat:8.3312,lon:77.8665},
+  {name:"Thisayanvilai Police Station",area:"Thisayanvilai",lat:8.3324,lon:77.8596}
+];
 
 const NOMINATIM_URL="https://nominatim.openstreetmap.org/search";
 const PHOTON_URL="https://photon.komoot.io/api/";
@@ -651,8 +642,8 @@ const serviceCircle=L.circle([SERVICE_CENTER.lat,SERVICE_CENTER.lon],{
 }).addTo(routeMap);
 routeMap.fitBounds(serviceCircle.getBounds(),{padding:[12,12]});
 
-L.marker([SERVICE_CENTER.lat,SERVICE_CENTER.lon]).addTo(routeMap)
-  .bindPopup("TSY TAXI · Thisayanvilai / திசையன்விளை service centre");
+let selectedLocationMarker=null;
+let lastFocusedLocation="pickup";
 
 /* =========================================
    HELPERS
@@ -718,7 +709,8 @@ function clearRouteMap(){
   if(routeLayer){routeMap.removeLayer(routeLayer);routeLayer=null;}
   if(pickupMarker){routeMap.removeLayer(pickupMarker);pickupMarker=null;}
   if(destinationMarker){routeMap.removeLayer(destinationMarker);destinationMarker=null;}
-  mapStatus.textContent="Select locations to view route";
+  if(selectedLocationMarker){routeMap.removeLayer(selectedLocationMarker);selectedLocationMarker=null;}
+  mapStatus.textContent="Choose a suggestion to show its map pin";
 }
 
 function resetFare(){
@@ -846,11 +838,10 @@ async function searchPlaces(query){
     }
   }
 
+  /* Keep the form usable when a public geocoder is temporarily unavailable.
+     Curated TSY TAXI landmarks and local-area suggestions still render. */
   if(!anySuccess){
-    const e=firstError;
-    if(e&&e.name==="AbortError")throw new Error("Location search took too long. Please try again.");
-    if(e instanceof TypeError)throw new Error("Cannot connect to the location search service. Check your internet connection.");
-    throw e||new Error("Location search failed. Please try again.");
+    console.warn("External geocoders unavailable; showing saved TSY TAXI places and local suggestions.",firstError);
   }
   return [];
 }
@@ -882,6 +873,26 @@ async function pickBest(text,label){
 /* =========================================
    SUGGESTIONS
 ========================================= */
+
+function featuredLocation(place){
+  return {
+    area:place.name,
+    displayName:place.name+", "+place.area,
+    lat:place.lat,lon:place.lon,
+    method:"featured-landmark"
+  };
+}
+
+function getFeaturedSuggestions(query){
+  const q=normalize(query);
+  if(!q)return [];
+  const matches=FEATURED_LANDMARKS.filter(place=>
+    normalize(place.name).includes(q)||normalize(place.area).includes(q)
+  );
+  // Typing the locality name returns the full set of curated landmarks for it.
+  return matches;
+}
+
 function getLocalSuggestions(query){
   const key=normalize(query);
   if(!key)return [];
@@ -939,8 +950,11 @@ function selectLocation(which,location){
   if(pickup&&destination){
     calculateBoth();
   }else{
+    selectedLocationMarker=L.marker([location.lat,location.lon]).addTo(routeMap)
+      .bindPopup("<b>"+escapeHtml(location.area||location.displayName||"Selected location")+"</b>").openPopup();
+    routeMap.setView([location.lat,location.lon],15);
+    mapStatus.textContent="Selected location shown on map";
     showStatus("Location selected. Enter the other location to calculate your fare.","success");
-    routeMap.setView([location.lat,location.lon],14);
   }
 }
 
@@ -959,6 +973,18 @@ function renderSuggestions(which,query,remote){
     const km=distanceFromCentre(location).toFixed(1);
     addSuggestion(list,location,
       location.displayName+"  ·  "+km+" km from Thisayanvilai",
+      sel=>selectLocation(which,sel));
+  });
+
+  /* Add the 20 requested pinned landmarks WITHOUT replacing existing
+     Google/geocoder/local-area suggestions. */
+  const featuredMatches=getFeaturedSuggestions(query);
+  featuredMatches.forEach(place=>{
+    const alreadyShown=remote.some(r=>normalize(r.area)===normalize(place.name) || normalize(r.displayName)===normalize(place.name));
+    if(alreadyShown)return;
+    const loc=featuredLocation(place);
+    addSuggestion(list,loc,
+      place.name+", "+place.area+" · "+place.lat.toFixed(4)+", "+place.lon.toFixed(4)+" · Saved TSY TAXI landmark",
       sel=>selectLocation(which,sel));
   });
 
@@ -1004,13 +1030,13 @@ function startAutocomplete(which){
       renderSuggestions(which,query,results);
     }catch(error){
       if(token!==searchToken[which])return;
-      list.innerHTML="";
-      const m=document.createElement("div");
-      m.className="suggestion";
-      m.textContent=error.message;
-      list.appendChild(m);
-      addSearchAgainSuggestion(list,query,which);
-      list.classList.add("show");
+      console.warn("Location suggestions fallback:",error);
+      renderSuggestions(which,query,[]);
+      const note=document.createElement("div");
+      note.className="suggestion";
+      note.style.color="#806000";
+      note.textContent="Online address lookup is temporarily unavailable. You can still choose saved TSY TAXI landmarks or local-area suggestions.";
+      list.insertBefore(note,list.firstChild);
     }
   },450);
 }
@@ -1018,11 +1044,26 @@ function startAutocomplete(which){
 /* =========================================
    INPUT EVENTS
 ========================================= */
-pickupInput.addEventListener("input",()=>{pickup=null;resetFare();startAutocomplete("pickup");});
-destinationInput.addEventListener("input",()=>{destination=null;resetFare();startAutocomplete("destination");});
+let googlePlacesReady=false;
+pickupInput.addEventListener("input",()=>{
+  pickup=null;resetFare();
+  if(!googlePlacesReady)startAutocomplete("pickup");
+});
+destinationInput.addEventListener("input",()=>{
+  destination=null;resetFare();
+  if(!googlePlacesReady)startAutocomplete("destination");
+});
 
-pickupInput.addEventListener("focus",()=>{if(pickupInput.value.trim().length>=2&&!pickup)startAutocomplete("pickup");});
-destinationInput.addEventListener("focus",()=>{if(destinationInput.value.trim().length>=2&&!destination)startAutocomplete("destination");});
+pickupInput.addEventListener("focus",()=>{
+  lastFocusedLocation="pickup";
+  const q=pickupInput.value.trim();
+  if(q.length>=2&&!pickup&&!googlePlacesReady)startAutocomplete("pickup");
+});
+destinationInput.addEventListener("focus",()=>{
+  lastFocusedLocation="destination";
+  const q=destinationInput.value.trim();
+  if(q.length>=2&&!destination&&!googlePlacesReady)startAutocomplete("destination");
+});
 
 document.addEventListener("click",e=>{
   if(!e.target.closest("#pickupField"))pickupSuggestions.classList.remove("show");
@@ -1030,6 +1071,13 @@ document.addEventListener("click",e=>{
 });
 
 pickupInput.addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&getFeaturedSuggestions(pickupInput.value.trim()).length){
+    e.preventDefault();
+    const place=getFeaturedSuggestions(pickupInput.value.trim())[0];
+    selectLocation("pickup",featuredLocation(place));
+    return;
+  }
+  if(googlePlacesReady)return;
   if(e.key==="Enter"){
     e.preventDefault();
     pickupSuggestions.classList.remove("show");
@@ -1037,6 +1085,13 @@ pickupInput.addEventListener("keydown",e=>{
   }
 });
 destinationInput.addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&getFeaturedSuggestions(destinationInput.value.trim()).length){
+    e.preventDefault();
+    const place=getFeaturedSuggestions(destinationInput.value.trim())[0];
+    selectLocation("destination",featuredLocation(place));
+    return;
+  }
+  if(googlePlacesReady)return;
   if(e.key==="Enter"){
     e.preventDefault();
     destinationSuggestions.classList.remove("show");
@@ -1295,18 +1350,6 @@ const logoutBtn=document.getElementById("logoutBtn");
 const helpModal=document.getElementById("helpModal");
 const helpModalClose=document.getElementById("helpModalClose");
 const menuHelp=document.getElementById("menuHelp");
-const downloadAppModal=document.getElementById("downloadAppModal");
-const downloadAppClose=document.getElementById("downloadAppClose");
-const menuDownloadApp=document.getElementById("menuDownloadApp");
-
-function openDownloadAppModal(){
-  closeSidebar();
-  downloadAppModal.classList.add("open");
-}
-function closeDownloadAppModal(){downloadAppModal.classList.remove("open");}
-menuDownloadApp.addEventListener("click",e=>{e.preventDefault();openDownloadAppModal();});
-downloadAppClose.addEventListener("click",closeDownloadAppModal);
-downloadAppModal.addEventListener("click",e=>{if(e.target===downloadAppModal)closeDownloadAppModal();});
 
 function openHelpModal(){
   closeSidebar();
@@ -1608,6 +1651,66 @@ function safeErrorText(value){
     "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
   }[char]));
 }
+
+/* =========================================
+   GOOGLE MAPS PLACES AUTOCOMPLETE
+   Google suggestions include addresses, streets, shops,
+   businesses, villages and landmarks. All chosen results
+   are checked against the exact 50 km service radius.
+========================================= */
+window.initTSYGooglePlaces=function(){
+  try{
+    if(!window.google||!google.maps||!google.maps.places||!google.maps.places.Autocomplete){
+      console.error("Google Places library did not load.");
+      return;
+    }
+    const sw=new google.maps.LatLng(BOX.minLat,BOX.minLon);
+    const ne=new google.maps.LatLng(BOX.maxLat,BOX.maxLon);
+    const bounds=new google.maps.LatLngBounds(sw,ne);
+    const options={
+      bounds,
+      strictBounds:true,
+      componentRestrictions:{country:"in"},
+      fields:["formatted_address","geometry","name","place_id","types"]
+    };
+
+    function attachGoogleAutocomplete(input,which){
+      const autocomplete=new google.maps.places.Autocomplete(input,options);
+      autocomplete.addListener("place_changed",()=>{
+        const place=autocomplete.getPlace();
+        if(!place||!place.geometry||!place.geometry.location){
+          showStatus("Please choose a suggested Google Maps place with a valid map location.","error");
+          return;
+        }
+        const loc=place.geometry.location;
+        const lat=loc.lat(),lon=loc.lng();
+        const area=place.name||((place.formatted_address||"").split(",")[0])||"Selected place";
+        const location={
+          area,
+          displayName:place.formatted_address||area,
+          lat,lon,
+          placeId:place.place_id||"",
+          types:Array.isArray(place.types)?place.types:[],
+          method:"google-places"
+        };
+        selectLocation(which,location);
+      });
+      autocomplete.setOptions({bounds,strictBounds:true});
+      return autocomplete;
+    }
+
+    window.tsyGoogleAutocomplete={
+      pickup:attachGoogleAutocomplete(pickupInput,"pickup"),
+      destination:attachGoogleAutocomplete(destinationInput,"destination")
+    };
+    googlePlacesReady=true;
+    console.log("✓ Google Maps Places autocomplete enabled for TSY TAXI");
+  }catch(error){
+    console.error("Google Places initialization failed:",error);
+    showStatus("Google Maps suggestions could not start. Please refresh and try again.","error");
+  }
+};
 </script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDMweONfNZUuUqXx3DIYgpnNBjjvWfj5z4&libraries=places&callback=initTSYGooglePlaces&language=en&region=IN"></script>
 </body>
 </html>
