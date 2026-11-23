@@ -302,7 +302,7 @@ main{min-height:calc(100svh - 98px);display:grid;place-items:center;padding:18px
 
  <button class="primary" id="continueBtn" type="button" disabled>CONTINUE TO BOOKING →</button>
  <div class="status" id="statusBox" aria-live="polite"></div>
- <p class="hint">Fare: ₹24 per km (₹0.024 per metre), calculated using the exact driving distance. Pickup and destination must each be within 50 km of Thisayanvilai, and at least one must be within 5 km.</p>
+ <p class="hint">Fare: ₹25 per km (₹0.025 per metre), calculated using the exact driving distance. Pickup and destination must each be within 50 km of Thisayanvilai, and at least one must be within 5 km.</p>
 </section>
 </main>
 
@@ -465,14 +465,14 @@ loadUserFromFirestore();
 ========================================= */
 const SERVICE_CENTER={name:"Thisayanvilai",lat:8.33611,lon:77.86444};
 const SERVICE_RADIUS_KM=50;
-const RATE_PER_KM=24;
+const RATE_PER_KM=25;
 const RATE_PER_METRE=RATE_PER_KM/1000;
 function getRateForDistance(distanceKm){
   return RATE_PER_KM;
 }
 function calculateFare(distanceMeters){
   if(!Number.isFinite(distanceMeters)||distanceMeters<0)return 0;
-  // Charge proportionally for every metre: 1,000 m = ₹24; 500 m = ₹12.
+  // Charge proportionally for every metre: 1,000 m = ₹25; 500 m = ₹12.5;
   return Math.round(distanceMeters*RATE_PER_METRE*100)/100;
 }
 const NEAR_CENTRE_KM=5;
@@ -1227,7 +1227,7 @@ async function calculateBoth(){
     fareValue.textContent="₹"+fare.toFixed(2);
     distanceValue.textContent=km.toFixed(2)+" km ("+Math.round(routeDistanceMeters).toLocaleString("en-IN")+" m)";
     fareMeta.textContent=Math.round(routeDistanceMeters).toLocaleString("en-IN")+" metres · "+
-      formatDuration(routeDurationSeconds)+" estimated · ₹"+appliedRate+"/km (₹0.024/metre)";
+      formatDuration(routeDurationSeconds)+" estimated · ₹"+appliedRate+"/km (₹0.025/metre)";
 
     continueBtn.disabled=false;
     showStatus("Service available! Estimated fare: ₹"+fare.toFixed(2)+".","success");
