@@ -192,22 +192,6 @@ main{min-height:calc(100svh - 98px);display:grid;place-items:center;padding:18px
  .logout-btn{height:44px;font-size:13px}
 }
 
-/* TSY TAXI home-screen shortcut prompt */
-.install-prompt-overlay{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;padding:20px}
-.install-prompt-overlay.open{display:flex}
-.install-prompt-card{width:min(100%,360px);background:#fff;border-radius:22px;padding:25px 22px 21px;text-align:center;box-shadow:0 22px 70px #0005;animation:tsyInstallPop .22s ease-out}
-@keyframes tsyInstallPop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-.install-prompt-icon{width:58px;height:58px;border-radius:18px;background:#ffc400;color:#111;display:grid;place-items:center;font-size:29px;font-weight:1000;margin:0 auto 13px}
-.install-prompt-card h2{font-size:20px;line-height:1.2;margin:0 0 8px;font-weight:950}
-.install-prompt-card p{font-size:13px;color:#666;line-height:1.55;margin:0 0 19px}
-.install-prompt-actions{display:flex;gap:10px}
-.install-prompt-actions button{height:46px;flex:1;border:0;border-radius:12px;font-size:12px;font-weight:950;cursor:pointer}
-.install-prompt-add{background:#ffc400;color:#111;box-shadow:0 3px 0 #d19e00}
-.install-prompt-skip{background:#f1f1f1;color:#333}
-.install-prompt-ok{width:100%;height:46px;border:0;border-radius:12px;background:#ffc400;color:#111;font-weight:950;cursor:pointer}
-.install-prompt-help{display:none;text-align:left;background:#fff8dc;border-radius:12px;padding:12px;margin-top:13px;font-size:11px;line-height:1.5;color:#604900}
-.install-prompt-help.show{display:block}
-
 </style>
 </head>
 
@@ -411,20 +395,6 @@ main{min-height:calc(100svh - 98px);display:grid;place-items:center;padding:18px
  </div>
 </div>
 
-
-<!-- Add to Home Screen prompt: shown to signed-in customers after 5 seconds -->
-<div class="install-prompt-overlay" id="tsyInstallPrompt" role="dialog" aria-modal="true" aria-labelledby="tsyInstallTitle">
-  <div class="install-prompt-card">
-    <div class="install-prompt-icon" id="tsyInstallIcon">⌂</div>
-    <h2 id="tsyInstallTitle">Book your trip next time easily!</h2>
-    <p id="tsyInstallMessage">Add TSY TAXI to your home screen for quick access whenever you need a ride.</p>
-    <div class="install-prompt-actions" id="tsyInstallActions">
-      <button class="install-prompt-skip" id="tsyInstallSkip" type="button">SKIP FOR NOW</button>
-      <button class="install-prompt-add" id="tsyInstallAdd" type="button">ADD TO HOME SCREEN</button>
-    </div>
-    <div class="install-prompt-help" id="tsyInstallHelp"></div>
-  </div>
-</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module">
@@ -1745,134 +1715,8 @@ window.initTSYGooglePlaces=function(){
 </script>
 
 <script>
-/* =========================================
-   TSY TAXI - ADD TO HOME SCREEN
-   Only signed-in customers see the prompt.
-   Skipping is temporary; successful addition
-   is remembered for that customer.
-========================================= */
 (function(){
   "use strict";
-
-  var promptEvent = null;
-  var overlay = document.getElementById("tsyInstallPrompt");
-  if (!overlay) return;
-
-  var title = document.getElementById("tsyInstallTitle");
-  var message = document.getElementById("tsyInstallMessage");
-  var actions = document.getElementById("tsyInstallActions");
-  var addButton = document.getElementById("tsyInstallAdd");
-  var skipButton = document.getElementById("tsyInstallSkip");
-  var help = document.getElementById("tsyInstallHelp");
-  var icon = document.getElementById("tsyInstallIcon");
-  var shownThisPage = false;
-  var installKey = "";
-
-  function getUser(){
-    try { return JSON.parse(localStorage.getItem("tsyTaxiUser") || "{}"); }
-    catch(e){ return {}; }
-  }
-
-  function getUserKey(user){
-    return String(user.uid || user.phone || user.email || user.name || "customer")
-      .replace(/[^a-zA-Z0-9_-]/g, "_");
-  }
-
-  function isStandalone(){
-    return window.matchMedia("(display-mode: standalone)").matches ||
-      window.matchMedia("(display-mode: minimal-ui)").matches ||
-      window.navigator.standalone === true;
-  }
-
-  function rememberInstalled(){
-    if (installKey) {
-      localStorage.setItem("tsyHomeScreenAdded:" + installKey, "yes");
-    }
-    closePrompt();
-  }
-
-  function openPrompt(){
-    overlay.classList.add("open");
-  }
-
-  function closePrompt(){
-    overlay.classList.remove("open");
-  }
-
-  function showSuccess(){
-    title.textContent = "Successfully added!";
-    message.textContent = "TSY TAXI has been added. You can now open it from your home screen and book your next trip easily.";
-    icon.textContent = "✓";
-    actions.style.display = "none";
-    help.classList.remove("show");
-    openPrompt();
-    var ok = document.createElement("button");
-    ok.type = "button";
-    ok.className = "install-prompt-ok";
-    ok.textContent = "GOT IT";
-    ok.addEventListener("click", function(){
-      closePrompt();
-      ok.remove();
-    });
-    if (!document.getElementById("tsyInstallSuccessOk")) {
-      ok.id = "tsyInstallSuccessOk";
-      actions.parentNode.appendChild(ok);
-    }
-  }
-
-  function resetPromptContent(){
-    title.textContent = "Book your trip next time easily!";
-    message.textContent = "Add TSY TAXI to your home screen for quick access whenever you need a ride.";
-    icon.textContent = "⌂";
-    actions.style.display = "flex";
-    help.classList.remove("show");
-    help.textContent = "";
-    var oldOk = document.getElementById("tsyInstallSuccessOk");
-    if (oldOk) oldOk.remove();
-  }
-
-  window.addEventListener("beforeinstallprompt", function(event){
-    event.preventDefault();
-    promptEvent = event;
-  });
-
-  window.addEventListener("appinstalled", function(){
-    rememberInstalled();
-    resetPromptContent();
-    showSuccess();
-  });
-
-  addButton.addEventListener("click", async function(){
-    if (promptEvent) {
-      var eventToPrompt = promptEvent;
-      promptEvent = null;
-      try {
-        await eventToPrompt.prompt();
-        var choice = await eventToPrompt.userChoice;
-        if (choice && choice.outcome === "accepted") {
-          rememberInstalled();
-          resetPromptContent();
-          showSuccess();
-        }
-      } catch(error) {
-        console.warn("TSY TAXI install prompt could not be shown:", error);
-        showManualHelp();
-      }
-      return;
-    }
-    showManualHelp();
-  });
-
-  function showManualHelp(){
-    help.innerHTML = "<strong>To add TSY TAXI:</strong><br>Open your browser menu (⋮) and choose <strong>Add to Home screen</strong> or <strong>Install app</strong>. On iPhone, tap <strong>Share</strong> and then <strong>Add to Home Screen</strong>.";
-    help.classList.add("show");
-  }
-
-  skipButton.addEventListener("click", closePrompt);
-  overlay.addEventListener("click", function(event){
-    if (event.target === overlay) closePrompt();
-  });
-
   // Register the service worker needed for Chromium's installability checks.
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
     window.addEventListener("load", function(){
@@ -1881,27 +1725,6 @@ window.initTSYGooglePlaces=function(){
       });
     });
   }
-
-  // Wait until the home page is ready, then show only for a real signed-in user.
-  window.addEventListener("load", function(){
-    window.setTimeout(function(){
-      if (shownThisPage) return;
-      var user = getUser();
-      var signedIn = !!(user && user.name && user.uid && user.isGuest !== true &&
-        String(user.uid).indexOf("guest_") !== 0);
-      if (!signedIn) return;
-
-      installKey = getUserKey(user);
-      if (localStorage.getItem("tsyHomeScreenAdded:" + installKey) === "yes" || isStandalone()) {
-        localStorage.setItem("tsyHomeScreenAdded:" + installKey, "yes");
-        return;
-      }
-
-      shownThisPage = true;
-      resetPromptContent();
-      openPrompt();
-    }, 5000);
-  });
 })();
 </script>
 
